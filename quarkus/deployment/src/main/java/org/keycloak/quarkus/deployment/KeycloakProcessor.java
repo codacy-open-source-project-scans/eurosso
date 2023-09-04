@@ -25,10 +25,10 @@ import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.Consume;
 import io.quarkus.deployment.annotations.ExecutionTime;
+import io.quarkus.deployment.annotations.Produce;
 import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.BootstrapConfigSetupCompleteBuildItem;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
-import io.quarkus.deployment.builditem.ExecutorBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.builditem.GeneratedResourceBuildItem;
 import io.quarkus.deployment.builditem.HotDeploymentWatchedFileBuildItem;
@@ -212,22 +212,21 @@ class KeycloakProcessor {
 
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
-    ConfigBuildItem initConfig(KeycloakRecorder recorder) {
+    @Produce(ConfigBuildItem.class)
+    void initConfig(KeycloakRecorder recorder) {
         Config.init(new MicroProfileConfigProvider());
         recorder.initConfig();
-        return new ConfigBuildItem();
     }
 
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
     @Consume(ConfigBuildItem.class)
-    ProfileBuildItem configureProfile(KeycloakRecorder recorder) {
+    @Produce(ProfileBuildItem.class)
+    void configureProfile(KeycloakRecorder recorder) {
         Profile profile = getCurrentOrCreateFeatureProfile();
 
         // record the features so that they are not calculated again at runtime
         recorder.configureProfile(profile.getName(), profile.getFeatures());
-
-        return new ProfileBuildItem();
     }
 
     /**
@@ -351,7 +350,8 @@ class KeycloakProcessor {
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
     @Consume(ProfileBuildItem.class)
-    KeycloakSessionFactoryPreInitBuildItem configureKeycloakSessionFactory(KeycloakRecorder recorder, List<PersistenceXmlDescriptorBuildItem> descriptors) {
+    @Produce(KeycloakSessionFactoryPreInitBuildItem.class)
+    void configureKeycloakSessionFactory(KeycloakRecorder recorder, List<PersistenceXmlDescriptorBuildItem> descriptors) {
         Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories = new HashMap<>();
         Map<Class<? extends Provider>, String> defaultProviders = new HashMap<>();
         Map<String, ProviderFactory> preConfiguredProviders = new HashMap<>();
@@ -380,8 +380,6 @@ class KeycloakProcessor {
         }
 
         recorder.configSessionFactory(factories, defaultProviders, preConfiguredProviders, loadThemesFromClassPath(), Environment.isRebuild());
-
-        return new KeycloakSessionFactoryPreInitBuildItem();
     }
 
     private List<ClasspathThemeProviderFactory.ThemesRepresentation> loadThemesFromClassPath() {
@@ -568,7 +566,7 @@ class KeycloakProcessor {
 
     @Record(ExecutionTime.RUNTIME_INIT)
     @BuildStep
-    void initializeFilter(BuildProducer<FilterBuildItem> filters, KeycloakRecorder recorder, ExecutorBuildItem executor, NonApplicationRootPathBuildItem nonApplicationRootPathBuildItem) {
+    void initializeFilter(BuildProducer<FilterBuildItem> filters, KeycloakRecorder recorder, NonApplicationRootPathBuildItem nonApplicationRootPathBuildItem) {
 
         List<String> ignoredPaths = new ArrayList<>();
 
@@ -584,7 +582,7 @@ class KeycloakProcessor {
                             .orElse(QUARKUS_DEFAULT_METRICS_PATH)));
         }
 
-        filters.produce(new FilterBuildItem(recorder.createRequestFilter(ignoredPaths, executor.getExecutorProxy()),FilterBuildItem.AUTHORIZATION - 10));
+        filters.produce(new FilterBuildItem(recorder.createRequestFilter(ignoredPaths),FilterBuildItem.AUTHORIZATION - 10));
     }
 
     @BuildStep
