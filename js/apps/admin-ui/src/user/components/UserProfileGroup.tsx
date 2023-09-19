@@ -26,7 +26,7 @@ export const UserProfileGroup = ({
   children,
   ...attribute
 }: PropsWithChildren<UserProfileFieldsProps>) => {
-  const { t } = useTranslation("users");
+  const { t } = useTranslation();
   const helpText = attribute.annotations?.["inputHelperTextBefore"] as string;
 
   const {
@@ -40,7 +40,7 @@ export const UserProfileGroup = ({
       fieldId={attribute.name}
       isRequired={isRequired(attribute)}
       validated={errors.username ? "error" : "default"}
-      helperTextInvalid={t("common:required")}
+      helperTextInvalid={t("required")}
       labelIcon={
         helpText ? (
           <HelpItem helpText={helpText} fieldLabelId={attribute.name!} />

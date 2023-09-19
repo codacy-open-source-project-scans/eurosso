@@ -59,8 +59,7 @@ export const LdapSettingsConnection = ({
   showSectionHeading = false,
   showSectionDescription = false,
 }: LdapSettingsConnectionProps) => {
-  const { t } = useTranslation("user-federation");
-  const { t: helpText } = useTranslation("user-federation-help");
+  const { t } = useTranslation();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const edit = !!id;
@@ -94,9 +93,7 @@ export const LdapSettingsConnection = ({
       {showSectionHeading && (
         <WizardSectionHeader
           title={t("connectionAndAuthenticationSettings")}
-          description={helpText(
-            "ldapConnectionAndAuthorizationSettingsDescription",
-          )}
+          description={t("ldapConnectionAndAuthorizationSettingsDescription")}
           showDescription={showSectionDescription}
         />
       )}
@@ -162,8 +159,8 @@ export const LdapSettingsConnection = ({
                 isDisabled={false}
                 onChange={(value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
-                label={t("common:on")}
-                labelOff={t("common:off")}
+                label={t("on")}
+                labelOff={t("off")}
                 aria-label={t("enableStartTls")}
               />
             )}
@@ -225,8 +222,8 @@ export const LdapSettingsConnection = ({
                 isDisabled={false}
                 onChange={(value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
-                label={t("common:on")}
-                labelOff={t("common:off")}
+                label={t("on")}
+                labelOff={t("off")}
                 aria-label={t("connectionPooling")}
               />
             )}
@@ -257,7 +254,7 @@ export const LdapSettingsConnection = ({
             data-testid="test-connection-button"
             onClick={() => testLdap("testConnection")}
           >
-            {t("common:testConnection")}
+            {t("testConnection")}
           </Button>
         </FormGroup>
         <FormGroup

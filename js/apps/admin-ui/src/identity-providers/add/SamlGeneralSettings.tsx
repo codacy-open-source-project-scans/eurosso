@@ -20,7 +20,7 @@ type SamlGeneralSettingsProps = {
 export const SamlGeneralSettings = ({
   isAliasReadonly = false,
 }: SamlGeneralSettingsProps) => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   const { realm } = useRealm();
 
   const {
@@ -48,7 +48,7 @@ export const SamlGeneralSettings = ({
         validated={
           errors.alias ? ValidatedOptions.error : ValidatedOptions.default
         }
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         <KeycloakTextInput
           isRequired
@@ -68,23 +68,25 @@ export const SamlGeneralSettings = ({
         data-testid="displayName"
       />
       <DisplayOrder />
-      <FormGroup
-        label={t("endpoints")}
-        fieldId="endpoints"
-        labelIcon={
-          <HelpItem
-            helpText={t("identity-providers-help:alias")}
-            fieldLabelId="identity-providers:alias"
+      {isAliasReadonly ? (
+        <FormGroup
+          label={t("endpoints")}
+          fieldId="endpoints"
+          labelIcon={
+            <HelpItem
+              helpText={t("identity-providers-help:alias")}
+              fieldLabelId="identity-providers:alias"
+            />
+          }
+          className="keycloak__identity-providers__saml_link"
+        >
+          <FormattedLink
+            title={t("samlEndpointsLabel")}
+            href={`${environment.authUrl}/realms/${realm}/broker/${alias}/endpoint/descriptor`}
+            isInline
           />
-        }
-        className="keycloak__identity-providers__saml_link"
-      >
-        <FormattedLink
-          title={t("samlEndpointsLabel")}
-          href={`${environment.authUrl}/realms/${realm}/broker/${alias}/endpoint/descriptor`}
-          isInline
-        />
-      </FormGroup>
+        </FormGroup>
+      ) : null}
     </>
   );
 };

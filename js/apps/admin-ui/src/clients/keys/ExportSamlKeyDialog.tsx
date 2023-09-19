@@ -18,7 +18,7 @@ export const ExportSamlKeyDialog = ({
   clientId,
   close,
 }: ExportSamlKeyDialogProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { realm } = useRealm();
 
   const { addAlert, addError } = useAlerts();
@@ -43,7 +43,7 @@ export const ExportSamlKeyDialog = ({
       addAlert(t("samlKeysExportSuccess"));
       close();
     } catch (error) {
-      addError("clients:samlKeysExportError", error);
+      addError("samlKeysExportError", error);
     }
   };
 
@@ -61,7 +61,7 @@ export const ExportSamlKeyDialog = ({
           type="submit"
           form="export-saml-key-form"
         >
-          {t("common:export")}
+          {t("export")}
         </Button>,
         <Button
           id="modal-cancel"
@@ -72,7 +72,7 @@ export const ExportSamlKeyDialog = ({
             close();
           }}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
     >

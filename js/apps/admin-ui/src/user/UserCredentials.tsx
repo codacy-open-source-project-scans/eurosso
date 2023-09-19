@@ -53,7 +53,7 @@ type ExpandableCredentialRepresentation = {
 };
 
 export const UserCredentials = ({ user }: UserCredentialsProps) => {
-  const { t } = useTranslation("users");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
@@ -124,7 +124,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: t("deleteCredentialsConfirmTitle"),
     messageKey: t("deleteCredentialsConfirm"),
-    continueButtonLabel: t("common:delete"),
+    continueButtonLabel: t("delete"),
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {

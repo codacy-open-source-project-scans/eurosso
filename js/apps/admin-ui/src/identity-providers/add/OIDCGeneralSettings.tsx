@@ -11,7 +11,7 @@ import { TextField } from "../component/TextField";
 import type { IdentityProviderParams } from "../routes/IdentityProvider";
 
 export const OIDCGeneralSettings = () => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   const { tab } = useParams<IdentityProviderParams>();
 
   const {
@@ -39,7 +39,7 @@ export const OIDCGeneralSettings = () => {
         validated={
           errors.alias ? ValidatedOptions.error : ValidatedOptions.default
         }
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         <KeycloakTextInput
           isReadOnly={tab === "settings"}

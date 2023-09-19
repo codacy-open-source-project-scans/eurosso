@@ -14,7 +14,7 @@ import { UserProfileFieldsProps, UserProfileGroup } from "./UserProfileGroup";
 
 type OptionLabel = Record<string, string> | undefined;
 export const SelectComponent = (attribute: UserProfileFieldsProps) => {
-  const { t } = useTranslation("users");
+  const { t } = useTranslation();
   const { control } = useFormContext();
   const [open, setOpen] = useState(false);
 
@@ -69,14 +69,10 @@ export const SelectComponent = (attribute: UserProfileFieldsProps) => {
               }
             }}
             selections={
-              field.value
-                ? field.value
-                : isMultiValue(field)
-                ? []
-                : t("common:choose")
+              field.value ? field.value : isMultiValue(field) ? [] : t("choose")
             }
             variant={isMultiValue(field) ? "typeaheadmulti" : "single"}
-            aria-label={t("common:selectOne")}
+            aria-label={t("selectOne")}
             isOpen={open}
             readOnly={attribute.readOnly}
           >
