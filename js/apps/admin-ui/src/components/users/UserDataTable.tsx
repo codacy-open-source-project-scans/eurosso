@@ -1,6 +1,6 @@
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
   AlertVariant,
@@ -29,19 +29,19 @@ import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 
 import { adminClient } from "../../admin-client";
+import { useRealm } from "../../context/realm-context/RealmContext";
+import { SearchType } from "../../user/details/SearchFilter";
+import { toAddUser } from "../../user/routes/AddUser";
+import { toUser } from "../../user/routes/User";
+import { emptyFormatter } from "../../util";
+import { useFetch } from "../../utils/useFetch";
 import { useAlerts } from "../alert/Alerts";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
 import { KeycloakSpinner } from "../keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 import { BruteUser, findUsers } from "../role-mapping/resource";
 import { KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
-import { useRealm } from "../../context/realm-context/RealmContext";
-import { emptyFormatter } from "../../util";
-import { useFetch } from "../../utils/useFetch";
-import { toAddUser } from "../../user/routes/AddUser";
-import { toUser } from "../../user/routes/User";
 import { UserDataTableToolbarItems } from "./UserDataTableToolbarItems";
-import { SearchType } from "../../user/details/SearchFilter";
 
 export type UserAttribute = {
   name: string;
@@ -128,25 +128,25 @@ export function UserDataTable() {
       });
     } catch (error) {
       if (userStorage?.length) {
-        addError("users:noUsersFoundErrorStorage", error);
+        addError("noUsersFoundErrorStorage", error);
       } else {
-        addError("users:noUsersFoundError", error);
+        addError("noUsersFoundError", error);
       }
       return [];
     }
   };
 
   const [toggleUnlockUsersDialog, UnlockUsersConfirm] = useConfirmDialog({
-    titleKey: "users:unlockAllUsers",
-    messageKey: "users:unlockUsersConfirm",
-    continueButtonLabel: "users:unlock",
+    titleKey: "unlockAllUsers",
+    messageKey: "unlockUsersConfirm",
+    continueButtonLabel: "unlock",
     onConfirm: async () => {
       try {
         await adminClient.attackDetection.delAll();
         refresh();
         addAlert(t("unlockUsersSuccess"), AlertVariant.success);
       } catch (error) {
-        addError("users:unlockUsersError", error);
+        addError("unlockUsersError", error);
       }
     },
   });
@@ -165,7 +165,7 @@ export function UserDataTable() {
         clearAllFilters();
         addAlert(t("userDeletedSuccess"), AlertVariant.success);
       } catch (error) {
-        addError("users:userDeletedError", error);
+        addError("userDeletedError", error);
       }
     },
   });
@@ -368,27 +368,27 @@ export function UserDataTable() {
         columns={[
           {
             name: "username",
-            displayKey: "users:username",
+            displayKey: "username",
             cellRenderer: UserDetailLink,
           },
           {
             name: "email",
-            displayKey: "users:email",
+            displayKey: "email",
             cellRenderer: ValidatedEmail,
           },
           {
             name: "lastName",
-            displayKey: "users:lastName",
+            displayKey: "lastName",
             cellFormatters: [emptyFormatter()],
           },
           {
             name: "firstName",
-            displayKey: "users:firstName",
+            displayKey: "firstName",
             cellFormatters: [emptyFormatter()],
           },
           {
             name: "status",
-            displayKey: "users:status",
+            displayKey: "status",
             cellRenderer: StatusRow,
           },
         ]}

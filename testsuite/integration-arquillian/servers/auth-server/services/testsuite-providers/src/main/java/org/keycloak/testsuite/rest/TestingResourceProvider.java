@@ -64,10 +64,12 @@ import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorPage;
+import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
 import org.keycloak.services.util.CookieHelper;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.datastore.PeriodicEventInvalidation;
 import org.keycloak.testsuite.components.TestProvider;
@@ -88,7 +90,9 @@ import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.runonserver.SerializationUtil;
 import org.keycloak.testsuite.util.FeatureDeployerUtil;
 import org.keycloak.timer.TimerProvider;
+import org.keycloak.truststore.FileTruststoreProvider;
 import org.keycloak.truststore.FileTruststoreProviderFactory;
+import org.keycloak.truststore.HostnameVerificationPolicy;
 import org.keycloak.truststore.TruststoreProvider;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
@@ -109,20 +113,24 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.UUID;
-import org.keycloak.services.ErrorResponse;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -814,7 +822,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
             clientScopeModel.setIncludeInTokenScope(true);
 
             // Add audience protocol mapper
-            ProtocolMapperModel audienceMapper = AudienceProtocolMapper.createClaimMapper("Audience for " + clientId, clientId, null,true, false);
+            ProtocolMapperModel audienceMapper = AudienceProtocolMapper.createClaimMapper("Audience for " + clientId, clientId, null,true, false, true );
             clientScopeModel.addProtocolMapper(audienceMapper);
 
             return clientScopeModel.getId();
@@ -877,6 +885,19 @@ public class TestingResourceProvider implements RealmResourceProvider {
     }
 
     private void setFeatureInProfileFile(File file, Profile.Feature featureProfile, String newState) {
+        doWithProperties(file, props -> {
+            props.setProperty("feature." + featureProfile.toString().toLowerCase(), newState);
+        });
+    }
+
+    private void unsetFeatureInProfileFile(File file, Profile.Feature featureProfile) {
+        doWithProperties(file, props -> {
+            props.remove("feature." + featureProfile.toString().toLowerCase());
+        });
+    }
+
+    private void doWithProperties(File file, Consumer<Properties> callback) {
+
         Properties properties = new Properties();
         if (file.isFile() && file.exists()) {
             try (FileInputStream fis = new FileInputStream(file)) {
@@ -886,7 +907,11 @@ public class TestingResourceProvider implements RealmResourceProvider {
             }
         }
 
-        properties.setProperty("feature." + featureProfile.toString().toLowerCase(), newState);
+        callback.accept(properties);
+
+        if (file.isFile() && !file.getParentFile().exists()) {
+            file.getParentFile().mkdirs();
+        }
 
         try (FileOutputStream fos = new FileOutputStream(file)) {
             properties.store(fos, null);
@@ -916,6 +941,30 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Produces(MediaType.APPLICATION_JSON)
     public Set<Profile.Feature> disableFeature(@PathParam("feature") String feature) {
         return updateFeature(feature, false);
+    }
+
+    @POST
+    @Path("/reset-feature/{feature}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void resetFeature(@PathParam("feature") String featureKey) {
+
+        Profile.Feature feature;
+
+        try {
+            feature = Profile.Feature.valueOf(featureKey);
+        } catch (IllegalArgumentException e) {
+            System.err.printf("Feature '%s' doesn't exist!!\n", featureKey);
+            throw new BadRequestException();
+        }
+
+        FeatureDeployerUtil.initBeforeChangeFeature(feature);
+
+        String jbossServerConfigDir = System.getProperty("jboss.server.config.dir");
+        // If we are in jboss-based container, we need to write profile.properties file, otherwise the change in system property will disappear after restart
+        if (jbossServerConfigDir != null) {
+            File file = new File(jbossServerConfigDir, "profile.properties");
+            unsetFeatureInProfileFile(file, feature);
+        }
     }
 
     private Set<Profile.Feature> updateFeature(String featureKey, boolean shouldEnable) {
@@ -1079,6 +1128,20 @@ public class TestingResourceProvider implements RealmResourceProvider {
     }
 
     @GET
+    @Path("/modify-truststore-spi-hostname-policy")
+    @NoCache
+    public void modifyTruststoreSpiHostnamePolicy(@QueryParam("hostnamePolicy") final HostnameVerificationPolicy hostnamePolicy) {
+        FileTruststoreProviderFactory fact = (FileTruststoreProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(TruststoreProvider.class);
+        this.factory.truststoreProvider = fact.create(session);
+        FileTruststoreProvider origTrustProvider = (FileTruststoreProvider) this.factory.truststoreProvider;
+        TruststoreProvider newTrustProvider = new FileTruststoreProvider(
+                origTrustProvider.getTruststore(), hostnamePolicy,
+                Collections.unmodifiableMap(origTrustProvider.getRootCertificates()),
+                Collections.unmodifiableMap(origTrustProvider.getIntermediateCertificates()));
+        fact.setProvider(newTrustProvider);
+    }
+
+    @GET
     @Path("/reenable-truststore-spi")
     @NoCache
     public void reenableTruststoreSpi() {
@@ -1088,5 +1151,19 @@ public class TestingResourceProvider implements RealmResourceProvider {
         FileTruststoreProviderFactory factory = (FileTruststoreProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(TruststoreProvider.class);
         factory.setProvider(this.factory.truststoreProvider);
     }
+
+    @GET
+    @Path("/get-authentication-session-tabs-count")
+    @NoCache
+    public Integer getAuthenticationSessionTabsCount(@QueryParam("realm") String realmName, @QueryParam("authSessionId") String authSessionId) {
+        RealmModel realm = getRealmByName(realmName);
+        RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId);
+        if (rootAuthSession == null) {
+            return 0;
+        }
+
+        return rootAuthSession.getAuthenticationSessions().size();
+    }
+
 
 }

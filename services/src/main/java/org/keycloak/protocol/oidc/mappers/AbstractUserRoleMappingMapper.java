@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
  *
  * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
  */
-abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper {
+abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper, TokenIntrospectionTokenMapper {
 
     @Override
     public int getPriority() {
@@ -95,12 +95,6 @@ abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper 
             Matcher matcher = CLIENT_ID_PATTERN.matcher(protocolClaim);
             if (matcher.find()) {
                 protocolClaim = matcher.replaceAll(clientId);
-            }
-            if (!(protocolClaim.endsWith("roles") || protocolClaim.startsWith(clientId) || protocolClaim.endsWith(clientId))) {
-                // the claim name does not reference the current client, do not map roles
-                // or if the claim does not end with roles suffix, do not map roles.
-                // the role suffix is used to move roles to a single location other than the default location (e.g.: realm_access and resource_access claims)
-                return;
             }
         }
 

@@ -58,6 +58,9 @@ public class LegacyAttributes extends DefaultAttributes {
             if (UserProfileContext.IDP_REVIEW.equals(context)) {
                 return false;
             }
+            if (realm.isRegistrationEmailAsUsername()) {
+                return true;
+            }
             return !realm.isEditUsernameAllowed();
         }
 
@@ -65,7 +68,8 @@ public class LegacyAttributes extends DefaultAttributes {
             if (isServiceAccountUser()) {
                 return false;
             }
-            if (UserProfileContext.IDP_REVIEW.equals(context)) {
+            if (UserProfileContext.IDP_REVIEW.equals(context)
+                    || UserProfileContext.USER_API.equals(context)) {
                 return false;
             }
             if (realm.isRegistrationEmailAsUsername() && !realm.isEditUsernameAllowed()) {
@@ -88,9 +92,14 @@ public class LegacyAttributes extends DefaultAttributes {
     @Override
     public Map<String, List<String>> getWritable() {
         Map<String, List<String>> attributes = new HashMap<>(this);
+        RealmModel realm = session.getContext().getRealm();
 
         for (String name : nameSet()) {
             if (isReadOnly(name)) {
+                if (UserModel.USERNAME.equals(name)
+                        && realm.isRegistrationEmailAsUsername()) {
+                    continue;
+                }
                 attributes.remove(name);
             }
         }

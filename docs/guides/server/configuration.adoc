@@ -9,7 +9,7 @@ summary="Understand how to configure and start Keycloak">
 This {section} explains the configuration methods for Keycloak and how to start and apply the preferred configuration. It includes configuration guidelines for optimizing Keycloak for faster startup and low memory footprint.
 
 == Configuring sources for Keycloak
-Keycloak loads the configuration from four sources, which are listed here in order of application.
+Keycloak loads the configuration from five sources, which are listed here in order of application.
 
 . Command-line parameters
 . Environment variables
@@ -231,7 +231,7 @@ The `--optimized` parameter tells Keycloak to assume a pre-built, already optimi
 You can enter all configuration options at startup; these options are the ones in <@links.server id="all-config"/> that are **not** marked with a tool icon.
 
 * If a build option is found at startup with a value that is equal to the value used when entering the `build`, that option gets silently ignored when you use the `--optimized` parameter.
-* If that option has a different value than the value used when a build was entered, a warning appers in the logs and the previously built value is used. For this value to take effect, run a new `build` before starting.
+* If that option has a different value than the value used when a build was entered, a warning appears in the logs and the previously built value is used. For this value to take effect, run a new `build` before starting.
 
 .Create an optimized build
 

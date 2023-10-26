@@ -91,7 +91,7 @@ const WebauthnSelect = ({
       label={t(label)}
       labelIcon={
         <HelpItem
-          helpText={t(`authentication-help:${label}`)}
+          helpText={t(`${label}Help`)}
           fieldLabelId={`authentication:${label}`}
         />
       }
@@ -347,6 +347,22 @@ export const WebauthnPolicy = ({
               name={`${namePrefix}AcceptableAaguids`}
               aria-label={t("webAuthnPolicyAcceptableAaguids")}
               addButtonLabel="addAaguids"
+            />
+          </FormGroup>
+          <FormGroup
+            label={t("webAuthnPolicyExtraOrigins")}
+            fieldId="webAuthnPolicyExtraOrigins"
+            labelIcon={
+              <HelpItem
+                helpText={t("webAuthnPolicyExtraOriginsHelp")}
+                fieldLabelId="webAuthnPolicyExtraOrigins"
+              />
+            }
+          >
+            <MultiLineInput
+              name={`${namePrefix}ExtraOrigins`}
+              aria-label={t("webAuthnPolicyExtraOrigins")}
+              addButtonLabel="addOrigins"
             />
           </FormGroup>
         </FormProvider>

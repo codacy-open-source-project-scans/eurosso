@@ -180,6 +180,12 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
 
         for (String name : nameSet()) {
             AttributeMetadata metadata = getMetadata(name);
+            RealmModel realm = session.getContext().getRealm();
+
+            if (UserModel.USERNAME.equals(name)
+                    && realm.isRegistrationEmailAsUsername()) {
+                continue;
+            }
 
             if (metadata == null || !metadata.canEdit(createAttributeContext(metadata))) {
                 attributes.remove(name);
@@ -225,11 +231,11 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
     }
 
     private AttributeContext createAttributeContext(Entry<String, List<String>> attribute, AttributeMetadata metadata) {
-        return new AttributeContext(context, session, attribute, user, metadata);
+        return new AttributeContext(context, session, attribute, user, metadata, this);
     }
 
     private AttributeContext createAttributeContext(String attributeName, AttributeMetadata metadata) {
-        return new AttributeContext(context, session, createAttribute(attributeName), user, metadata);
+        return new AttributeContext(context, session, createAttribute(attributeName), user, metadata, this);
     }
 
     protected AttributeContext createAttributeContext(AttributeMetadata metadata) {
