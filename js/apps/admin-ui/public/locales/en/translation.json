@@ -172,6 +172,7 @@
   "missingAttributes": "No attributes have been defined yet. Click the below button to add attributes, key and value are required for a key pair.",
   "addAttribute": "Add an attribute",
   "removeAttribute": "Remove attribute",
+  "editUsernameHelp": "If enabled, the username field is editable, readonly otherwise.",
   "keyPlaceholder": "Type a key",
   "valuePlaceholder": "Type a value",
   "keyError": "A key must be provided.",
@@ -587,9 +588,13 @@
   "frontchannelUrlInvalid": "Front-channel logout URL is not a valid URL",
   "accessSettings": "Access settings",
   "rootUrl": "Root URL",
+  "rootURLHelp": "Root URL appended to relative URLs",
   "validRedirectUri": "Valid redirect URIs",
+  "validRedirectURIsHelp": "Valid URI pattern a browser can redirect to after a successful login. Simple wildcards are allowed such as 'http://example.com/*'. Relative path can be specified too such as /my/relative/path/*. Relative paths are relative to the client root URL, or if none is specified the auth server root URL is used. For SAML, you must set valid URI patterns if you are relying on the consumer service URL embedded with the login request.",
   "validPostLogoutRedirectUri": "Valid post logout redirect URIs",
+  "validPostLogoutRedirectURIsHelp": "Valid URI pattern a browser can redirect to after a successful logout. A value of '+' or an empty field will use the list of valid redirect uris. A value of '-' will not allow any post logout redirect uris. Simple wildcards are allowed such as 'http://example.com/*'. Relative path can be specified too such as /my/relative/path/*. Relative paths are relative to the client root URL, or if none is specified the auth server root URL is used.",
   "idpInitiatedSsoUrlName": "IDP-Initiated SSO URL name",
+  "unsigned": "Unsigned",
   "idpInitiatedSsoUrlNameHelp": "URL fragment name to reference client when you want to do IDP Initiated SSO. Leaving this empty will disable IDP Initiated SSO. The URL you will reference from your browser will be: {server-root}/realms/{realm}/protocol/saml/clients/{client-url-name}",
   "idpInitiatedSsoRelayState": "IDP Initiated SSO Relay State",
   "masterSamlProcessingUrl": "Master SAML Processing URL",
@@ -2141,8 +2146,13 @@
     "PUSHED_AUTHORIZATION_REQUEST_ERROR": {
       "name": "Pushed authorization request error",
       "description": "Pushed authorization request error"
+    },
+    "USER_DISABLED_BY_PERMANENT_LOCKOUT": {
+      "name": "User disabled by permanent lockout",
+      "description": "User disabled by permanent lockout"
     }
   },
+  "userEventsRegistered": "User events registered",
   "eventConfigSuccessfully": "Successfully saved configuration",
   "eventConfigError": "Could not save event configuration {{error}}",
   "deleteEvents": "Clear events",
@@ -2884,9 +2894,10 @@
   "clientAuthentications": {
     "client_secret_post": "Client secret sent as post",
     "client_secret_basic": "Client secret sent as basic auth",
-    "client_secret_jwt": "Client secret as jwt",
+    "client_secret_jwt": "JWT signed with client secret",
     "private_key_jwt": "JWT signed with private key"
   },
+  "clientAssertionAudience": "Client assertion audience",
   "clientAssertionSigningAlg": "Client assertion signature algorithm",
   "algorithmNotSpecified": "Algorithm not specified",
   "acceptsPromptNone": "Accepts prompt=none forward from client",
@@ -2969,7 +2980,8 @@
   "attributeConsumingServiceNameHelp": "Name of the Attribute Consuming Service profile to advertise in the SP metadata.",
   "forwardParametersHelp": "Non OpenID Connect/OAuth standard query parameters to be forwarded to external IDP from the initial application request to Authorization Endpoint. Multiple parameters can be entered, separated by comma (,).",
   "clientAuthenticationHelp": "The client authentication method (cfr. https://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication). In case of JWT signed with private key, the realm private key is used.",
-  "clientAssertionSigningAlgHelp": "Signature algorithm to create JWT assertion as client authentication. In the case of JWT signed with private key or Client secret as jwt, it is required. If no algorithm is specified, the following algorithm is adapted. RS256 is adapted in the case of JWT signed with private key. HS256 is adapted in the case of Client secret as jwt.",
+  "clientAssertionAudienceHelp": "The audience to use for the client assertion. The default value is the IDP's token endpoint URL.",
+  "clientAssertionSigningAlgHelp": "Signature algorithm to create JWT assertion as client authentication. In the case of JWT signed with private key or JWT signed with client secret, it is required. If no algorithm is specified, the following algorithm is adapted. RS256 is adapted in the case of JWT signed with private key. HS256 is adapted in the case of JWT signed with client secret.",
   "storeTokensHelp": "Enable/disable if tokens must be stored after authenticating users.",
   "storedTokensReadableHelp": "Enable/disable if new users can read any stored tokens. This assigns the broker.read-token role.",
   "accountLinkingOnlyHelp": "If true, users cannot log in through this provider.  They can only link to this provider.  This is useful if you don't want to allow login from the provider, but want to integrate with a provider",
