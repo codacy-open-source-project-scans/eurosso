@@ -22,6 +22,17 @@
         <maven.build.cache.exclude.4>${project.basedir}/src/main/resources/theme/keycloak.v2/account/src/web_modules</maven.build.cache.exclude.4>
     </properties>
 
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-ui</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-account-ui</artifactId>
+        </dependency>
+    </dependencies>
+
     <build>
         <resources>
             <resource>
@@ -193,6 +204,16 @@
                                 </goals>
                                 <configuration>
                                     <arguments>${pnpm.args.install}</arguments>
+                                    <workingDirectory>${dir.common}</workingDirectory>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>pnpm-build-common</id>
+                                <goals>
+                                    <goal>pnpm</goal>
+                                </goals>
+                                <configuration>
+                                    <arguments>run build</arguments>
                                     <workingDirectory>${dir.common}</workingDirectory>
                                 </configuration>
                             </execution>
