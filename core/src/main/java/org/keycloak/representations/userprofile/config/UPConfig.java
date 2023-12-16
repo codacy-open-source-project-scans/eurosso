@@ -21,6 +21,8 @@ package org.keycloak.representations.userprofile.config;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
@@ -29,11 +31,23 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * @author Vlastimil Elias <velias@redhat.com>
  *
  */
-public class UPConfig {
+public class UPConfig implements Cloneable {
 
     public enum UnmanagedAttributePolicy {
+
+        /**
+         * Unmanaged attributes are enabled and available from any context.
+         */
         ENABLED,
+
+        /**
+         * Unmanaged attributes are only available as read-only and only through the management interfaces.
+         */
         ADMIN_VIEW,
+
+        /**
+         * Unmanaged attributes are only available as read-write and only through the management interfaces.
+         */
         ADMIN_EDIT
     }
 
@@ -50,14 +64,19 @@ public class UPConfig {
         this.attributes = attributes;
     }
 
-    public UPConfig addAttribute(UPAttribute attribute) {
+    public UPConfig addOrReplaceAttribute(UPAttribute attribute) {
         if (attributes == null) {
             attributes = new ArrayList<>();
         }
 
+        removeAttribute(attribute.getName());
         attributes.add(attribute);
 
         return this;
+    }
+
+    public boolean removeAttribute(String name) {
+        return attributes != null && attributes.removeIf(attribute -> attribute.getName().equals(name));
     }
 
     public List<UPGroup> getGroups() {
@@ -102,5 +121,20 @@ public class UPConfig {
     @Override
     public String toString() {
         return "UPConfig [attributes=" + attributes + ", groups=" + groups + "]";
+    }
+
+    @Override
+    public UPConfig clone() {
+        UPConfig cfg = new UPConfig();
+
+        cfg.setUnmanagedAttributePolicy(this.unmanagedAttributePolicy);
+        if (attributes != null) {
+            cfg.setAttributes(attributes.stream().map(UPAttribute::clone).collect(Collectors.toList()));
+        }
+        if (groups != null) {
+            cfg.setGroups(groups.stream().map(UPGroup::clone).collect(Collectors.toList()));
+        }
+
+        return cfg;
     }
 }

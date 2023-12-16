@@ -83,7 +83,12 @@ public abstract class AbstractUserProfileTest extends AbstractTestRealmKeycloakT
 
     protected static void setConfiguration(KeycloakSession session, String config) {
         UserProfileProvider provider = getUserProfileProvider(session);
-        provider.setConfiguration(config);
+        try {
+            UPConfig upConfig = config == null ? null : UPConfigUtils.parseConfig(config);
+            provider.setConfiguration(upConfig);
+        } catch (IOException ioe) {
+            throw new RuntimeException("Error when parsing user-profile config: " + config, ioe);
+        }
     }
 
     protected static UserProfileProvider getUserProfileProvider(KeycloakSession session) {
@@ -104,7 +109,7 @@ public abstract class AbstractUserProfileTest extends AbstractTestRealmKeycloakT
             Map<String, Object> validatorConfig = new HashMap<>();
             validatorConfig.put("min", 3);
             attribute.addValidation("length", validatorConfig);
-            config.addAttribute(attribute);
+            config.addOrReplaceAttribute(attribute);
         }
         String newConfig = JsonSerialization.writeValueAsString(config);
         return newConfig;

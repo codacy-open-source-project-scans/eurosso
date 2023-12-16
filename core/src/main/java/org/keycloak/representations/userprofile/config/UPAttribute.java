@@ -19,6 +19,7 @@
 package org.keycloak.representations.userprofile.config;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -27,7 +28,7 @@ import java.util.Map;
  * @author Vlastimil Elias <velias@redhat.com>
  *
  */
-public class UPAttribute {
+public class UPAttribute implements Cloneable {
 
     private String name;
     private String displayName;
@@ -47,6 +48,26 @@ public class UPAttribute {
 
     public UPAttribute(String name) {
         this.name = name != null ? name.trim() : null;
+    }
+
+    public UPAttribute(String name, UPGroup group) {
+        this(name);
+        this.group = group.getName();
+    }
+
+    public UPAttribute(String name, UPAttributePermissions permissions, UPAttributeRequired required, UPAttributeSelector selector) {
+        this(name);
+        this.permissions = permissions;
+        this.required = required;
+        this.selector = selector;
+    }
+
+    public UPAttribute(String name, UPAttributePermissions permissions, UPAttributeRequired required) {
+        this(name, permissions, required, null);
+    }
+
+    public UPAttribute(String name, UPAttributePermissions permissions) {
+        this(name, permissions, null);
     }
 
     public String getName() {
@@ -123,5 +144,30 @@ public class UPAttribute {
     @Override
     public String toString() {
         return "UPAttribute [name=" + name + ", displayName=" + displayName + ", permissions=" + permissions + ", selector=" + selector + ", required=" + required + ", validations=" + validations + ", annotations=" + annotations + ", group=" + group + "]";
+    }
+
+    @Override
+    protected UPAttribute clone() {
+        UPAttribute attr = new UPAttribute(this.name);
+        attr.setDisplayName(this.displayName);
+
+        Map<String, Map<String, Object>> validations;
+        if (this.validations == null) {
+            validations = null;
+        } else {
+            validations = new LinkedHashMap<>();
+            for (Map.Entry<String, Map<String, Object>> entry : this.validations.entrySet()) {
+                Map<String, Object> newVal = entry.getValue() == null ? null : new LinkedHashMap<>(entry.getValue());
+                validations.put(entry.getKey(), newVal);
+            }
+        }
+        attr.setValidations(validations);
+
+        attr.setAnnotations(this.annotations == null ? null : new HashMap<>(this.annotations));
+        attr.setRequired(this.required == null ? null : this.required.clone());
+        attr.setPermissions(this.permissions == null ? null : this.permissions.clone());
+        attr.setSelector(this.selector == null ? null : this.selector.clone());
+        attr.setGroup(this.group);
+        return attr;
     }
 }
