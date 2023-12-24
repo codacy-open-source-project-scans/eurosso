@@ -15,6 +15,7 @@ Options:
 
 -h, --help           This help message.
 --help-all           This same help message but with additional options.
+-v, --verbose        Print out error details when running this command.
 
 Cache:
 
@@ -65,6 +66,9 @@ HTTP(S):
 --http-relative-path <path>
                      Set the path relative to '/' for serving resources. The path must start with a
                        '/'. Default: /.
+--https-client-auth <auth>
+                     Configures the server to require/request client authentication. Possible
+                       values are: none, request, required. Default: none.
 
 Health:
 
