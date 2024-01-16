@@ -30,6 +30,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.keycloak.Config;
+import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.common.Profile;
 import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.component.ComponentModel;
@@ -38,6 +39,7 @@ import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
@@ -84,8 +86,6 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
     private static final String[] DEFAULT_ADMIN_READ_ONLY_ATTRIBUTES = { "KERBEROS_PRINCIPAL", "LDAP_ID", "LDAP_ENTRY_DN", "CREATED_TIMESTAMP", "createTimestamp", "modifyTimestamp" };
     private static final Pattern readOnlyAttributesPattern = getRegexPatternString(DEFAULT_READ_ONLY_ATTRIBUTES);
     private static final Pattern adminReadOnlyAttributesPattern = getRegexPatternString(DEFAULT_ADMIN_READ_ONLY_ATTRIBUTES);
-
-    private boolean isDeclarativeConfigurationEnabled;
 
     private UPConfig parsedDefaultRawConfig;
     private final Map<UserProfileContext, UserProfileMetadata> contextualMetadataRegistry = new HashMap<>();
@@ -175,6 +175,13 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         return realm.isInternationalizationEnabled();
     }
 
+    private static boolean isTermAndConditionsEnabled(AttributeContext context) {
+        RealmModel realm = context.getSession().getContext().getRealm();
+        RequiredActionProviderModel tacModel = realm.getRequiredActionProviderByAlias(
+                UserModel.RequiredAction.TERMS_AND_CONDITIONS.name());
+        return tacModel != null && tacModel.isEnabled();
+    }
+
     private static boolean isNewUser(AttributeContext c) {
         return c.getUser() == null;
     }
@@ -198,7 +205,6 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
 
     @Override
     public void init(Config.Scope config) {
-        isDeclarativeConfigurationEnabled = Profile.isFeatureEnabled(Profile.Feature.DECLARATIVE_USER_PROFILE);
         parsedDefaultRawConfig = UPConfigUtils.parseDefaultConfig();
 
         // make sure registry is clear in case of re-deploy
@@ -313,12 +319,8 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
      * @return the metadata
      */
     protected UserProfileMetadata configureUserProfile(UserProfileMetadata metadata) {
-        if (isDeclarativeConfigurationEnabled) {
-            // default metadata for each context is based on the default realm configuration
-            return new DeclarativeUserProfileProvider(null, this).decorateUserProfileForCache(metadata, parsedDefaultRawConfig);
-        }
-
-        return metadata;
+        // default metadata for each context is based on the default realm configuration
+        return new DeclarativeUserProfileProvider(null, this).decorateUserProfileForCache(metadata, parsedDefaultRawConfig);
     }
 
     private AttributeValidatorMetadata createReadOnlyAttributeUnchangedValidator(Pattern pattern) {
@@ -447,6 +449,11 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         metadata.addAttribute(UserModel.LOCALE, -1, DeclarativeUserProfileProviderFactory::isInternationalizationEnabled, DeclarativeUserProfileProviderFactory::isInternationalizationEnabled)
                 .setRequired(AttributeMetadata.ALWAYS_FALSE);
 
+        metadata.addAttribute(TermsAndConditions.USER_ATTRIBUTE, -1, AttributeMetadata.ALWAYS_FALSE,
+                DeclarativeUserProfileProviderFactory::isTermAndConditionsEnabled)
+                .setAttributeDisplayName("${termsAndConditionsUserAttribute}")
+                .setRequired(AttributeMetadata.ALWAYS_FALSE);
+
         return metadata;
     }
 
@@ -460,10 +467,6 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
     }
 
     // GETTER METHODS FOR INTERNAL FIELDS
-
-    protected boolean isDeclarativeConfigurationEnabled() {
-        return isDeclarativeConfigurationEnabled;
-    }
 
     protected UPConfig getParsedDefaultRawConfig() {
         return parsedDefaultRawConfig;

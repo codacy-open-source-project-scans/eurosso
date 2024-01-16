@@ -69,9 +69,9 @@
     "@rollup/plugin-inject": "^5.0.5",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
-    "@rollup/plugin-typescript": "^11.1.5",
+    "@rollup/plugin-typescript": "^11.1.6",
     "es6-promise": "^4.2.8",
-    "rollup": "^4.9.4",
+    "rollup": "^4.9.5",
     "shx": "^0.3.4"
   },
   "dependencies": {

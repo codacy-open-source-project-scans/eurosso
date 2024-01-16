@@ -56,7 +56,7 @@ import java.util.stream.Collectors;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.jboss.logging.Logger;
 import org.keycloak.config.DeprecatedMetadata;
-import org.keycloak.config.MultiOption;
+import org.keycloak.config.Option;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.cli.command.Build;
@@ -194,7 +194,7 @@ public final class Picocli {
         parseConfigArgs(new BiConsumer<String, String>() {
             @Override
             public void accept(String key, String value) {
-                PropertyMapper mapper = PropertyMappers.getMapper(key);
+                PropertyMapper<?> mapper = PropertyMappers.getMapper(key);
 
                 if (mapper != null && mapper.isBuildTime()) {
                     return;
@@ -280,7 +280,7 @@ public final class Picocli {
             List<String> ignoredRunTime = new ArrayList<>();
             Set<String> deprecatedInUse = new HashSet<>();
             for (OptionCategory category : abstractCommand.getOptionCategories()) {
-                List<PropertyMapper> mappers = new ArrayList<>();
+                List<PropertyMapper<?>>  mappers = new ArrayList<>();
                 Optional.ofNullable(PropertyMappers.getRuntimeMappers().get(category)).ifPresent(mappers::addAll);
                 Optional.ofNullable(PropertyMappers.getBuildTimeMappers().get(category)).ifPresent(mappers::addAll);
                 for (PropertyMapper<?> mapper : mappers) {
@@ -388,7 +388,7 @@ public final class Picocli {
             // compare only the relevant options for this command, as not all options might be set for this command
             if (cmdCommand.getCommand() instanceof AbstractCommand) {
                 AbstractCommand abstractCommand = cmdCommand.getCommand();
-                PropertyMapper mapper = PropertyMappers.getMapper(propertyName);
+                PropertyMapper<?> mapper = PropertyMappers.getMapper(propertyName);
                 if (mapper != null) {
                     if (!abstractCommand.getOptionCategories().contains(mapper.getCategory())) {
                         continue;
@@ -397,9 +397,9 @@ public final class Picocli {
             }
 
             if (runtimeValue == null && isNotBlank(persistedValue)) {
-                PropertyMapper mapper = PropertyMappers.getMapper(propertyName);
+                PropertyMapper<?> mapper = PropertyMappers.getMapper(propertyName);
 
-                if (mapper != null && persistedValue.equals(mapper.getDefaultValue().map(Object::toString).orElse(null))) {
+                if (mapper != null && persistedValue.equals(Option.getDefaultValueString(mapper.getDefaultValue().orElse(null)))) {
                     // same as default
                     continue;
                 }
@@ -551,16 +551,16 @@ public final class Picocli {
     }
 
     private static void addOptionsToCli(CommandLine commandLine, boolean includeBuildTime, boolean includeRuntime) {
-        Map<OptionCategory, List<PropertyMapper>> mappers = new EnumMap<>(OptionCategory.class);
+        Map<OptionCategory, List<PropertyMapper<?>>> mappers = new EnumMap<>(OptionCategory.class);
 
         if (includeRuntime) {
             mappers.putAll(PropertyMappers.getRuntimeMappers());
         }
 
         if (includeBuildTime) {
-            for (Map.Entry<OptionCategory, List<PropertyMapper>> entry : PropertyMappers.getBuildTimeMappers()
+            for (Map.Entry<OptionCategory, List<PropertyMapper<?>>> entry : PropertyMappers.getBuildTimeMappers()
                     .entrySet()) {
-                List<PropertyMapper> result = new ArrayList<>(mappers.getOrDefault(entry.getKey(), Collections.emptyList()));
+                List<PropertyMapper<?>> result = new ArrayList<>(mappers.getOrDefault(entry.getKey(), Collections.emptyList()));
 
                 result.addAll(entry.getValue());
 
@@ -571,10 +571,10 @@ public final class Picocli {
         addMappedOptionsToArgGroups(commandLine, mappers);
     }
 
-    private static void addMappedOptionsToArgGroups(CommandLine commandLine, Map<OptionCategory, List<PropertyMapper>> propertyMappers) {
+    private static void addMappedOptionsToArgGroups(CommandLine commandLine, Map<OptionCategory, List<PropertyMapper<?>>> propertyMappers) {
         CommandSpec cSpec = commandLine.getCommandSpec();
         for(OptionCategory category : ((AbstractCommand) commandLine.getCommand()).getOptionCategories()) {
-            List<PropertyMapper> mappersInCategory = propertyMappers.get(category);
+            List<PropertyMapper<?>> mappersInCategory = propertyMappers.get(category);
 
             if (mappersInCategory == null) {
                 //picocli raises an exception when an ArgGroup is empty, so ignore it when no mappings found for a category.
@@ -586,7 +586,7 @@ public final class Picocli {
                     .order(category.getOrder())
                     .validate(false);
 
-            for (PropertyMapper mapper: mappersInCategory) {
+            for (PropertyMapper<?> mapper: mappersInCategory) {
                 String name = mapper.getCliFormat();
                 String description = mapper.getDescription();
 
@@ -608,14 +608,11 @@ public final class Picocli {
                         .hidden(mapper.isHidden());
 
                 if (mapper.getDefaultValue().isPresent()) {
-                    optBuilder.defaultValue(mapper.getDefaultValue().get().toString());
+                    optBuilder.defaultValue(Option.getDefaultValueString(mapper.getDefaultValue().get()));
                 }
 
                 if (mapper.getType() != null) {
                     optBuilder.type(mapper.getType());
-                    if (mapper.getOption() instanceof MultiOption) {
-                        optBuilder.auxiliaryTypes(((MultiOption<?>) mapper.getOption()).getAuxiliaryType());
-                    }
                 } else {
                     optBuilder.type(String.class);
                 }
@@ -638,7 +635,10 @@ public final class Picocli {
             transformedDesc.append(" Possible values are: " + String.join(", ", mapper.getExpectedValues()) + ".");
         }
 
-        mapper.getDefaultValue().map(d -> " Default: " + d + ".").ifPresent(transformedDesc::append);
+        mapper.getDefaultValue()
+                .map(d -> Option.getDefaultValueString(d).replaceAll("%", "%%")) // escape formats
+                .map(d -> " Default: " + d + ".")
+                .ifPresent(transformedDesc::append);
 
         mapper.getDeprecatedMetadata().ifPresent(deprecatedMetadata -> {
             List<String> deprecatedDetails = new ArrayList<>();
@@ -722,7 +722,7 @@ public final class Picocli {
 
     private static void checkChangesInBuildOptionsDuringAutoBuild() {
         if (Configuration.isOptimized()) {
-            List<PropertyMapper> buildOptions = stream(Configuration.getPropertyNames(true).spliterator(), false)
+            List<PropertyMapper<?>>  buildOptions = stream(Configuration.getPropertyNames(true).spliterator(), false)
                     .sorted()
                     .map(PropertyMappers::getMapper)
                     .filter(Objects::nonNull).collect(Collectors.toList());
@@ -733,7 +733,7 @@ public final class Picocli {
 
             StringBuilder options = new StringBuilder();
 
-            for (PropertyMapper mapper : buildOptions) {
+            for (PropertyMapper<?> mapper : buildOptions) {
                 String newValue = ofNullable(getCurrentBuiltTimeProperty(mapper.getFrom()))
                         .map(ConfigValue::getValue)
                         .orElse("<unset>");
