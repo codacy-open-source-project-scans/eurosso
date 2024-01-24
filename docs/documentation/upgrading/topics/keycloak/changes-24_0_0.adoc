@@ -155,6 +155,21 @@ Therefore, it was changed to sequential session loading.
 For offline sessions, the default in this and previous versions of Keycloak is to load those sessions on demand, which scales better with a lot of offline sessions than the attempt to preload them in parallel. Setups that use this default setup are not affected by the change of the loading strategy for offline sessions.
 Setups that have offline session preloading enabled should migrate to a setup where offline-session preloading is disabled.
 
+= Deprecated offline session preloading
+
+The default behavior of Keycloak is to load offline sessions on demand.
+The old behavior to preload them at startup is now deprecated, as preloading them at startup does not scale well with a growing number of sessions, and increases Keycloak memory usage.
+The old behavior will be removed in a future release.
+
+To re-enable old behavior while it is deprecated and not removed yet, use the feature flag and the SPI option as shown below:
+
+[source,bash]
+----
+bin/kc.[sh|bat] start --features-enabled offline-session-preloading --spi-user-sessions-infinispan-preload-offline-sessions-from-database=true
+----
+
+The API of `UserSessionProvider` deprecated the method `getOfflineUserSessionByBrokerSessionId(RealmModel realm, String brokerSessionId)`.
+Instead of this method, use `getOfflineUserSessionByBrokerUserIdStream(RealmModel, String brokerUserId)` to first get the sessions of a user, and then filter by the broker session ID as needed.
 
 = Infinispan metrics use labels for cache manager and cache names
 
@@ -175,3 +190,45 @@ To revert the change for an installation, use a custom Infinispan XML configurat
 ----
 <metrics names-as-tags="false" />
 ----
+
+= The Admin send-verify-email API now uses the same email verification template
+
+----
+PUT /admin/realms/{realm}/users/{id}/send-verify-email
+----
+
+In this release, the API will use the `email-verification.ftl` template instead of `executeActions.ftl`.
+
+.Before upgrading
+----
+Perform the following action(s): Verify Email
+----
+
+.After upgrading
+----
+Confirm validity of e-mail address email@example.org.
+----
+
+If you have customized the `executeActions.ftl` template to modify how users verify their email using this API, ensure that you transfer your modifications to the new template.
+
+A new parameter called `lifespan` will be introduced to allow overriding of the default lifespan value (12 hours).
+
+If you prefer the previous behavior, use the `execute-actions-email` API as follows.
+
+----
+PUT /admin/realms/{realm}/users/{id}/execute-actions-email
+
+["VERIFY_EMAIL"]
+----
+
+= Removal of the deprecated mode for SAML encryption
+
+The compatibility mode for SAML encryption introduced in version 21 is now removed. The system property `keycloak.saml.deprecated.encryption` is not managed anymore by the server. The clients which still used the old signing key for encryption should update it from the new IDP configuration metadata.
+
+= Renaming JPA provider configuration options for migration
+
+After removal of the Map Store the following configuration options were renamed:
+
+* `spi-connections-jpa-legacy-initialize-empty` to `spi-connections-jpa-quarkus-initialize-empty`
+* `spi-connections-jpa-legacy-migration-export` to `spi-connections-jpa-quarkus-migration-export`
+* `spi-connections-jpa-legacy-migration-strategy` to `spi-connections-jpa-quarkus-migration-strategy`

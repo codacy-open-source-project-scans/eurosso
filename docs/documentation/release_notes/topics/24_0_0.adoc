@@ -6,9 +6,15 @@ image::images/new-welcome-screen.png["A screenshot of the new welcome page, show
 
 If you are using a custom theme, you may need to update it to support the new welcome page. For more details consult the link:{upgradingguide_link}[{upgradingguide_name}].
 
-= Keycloak JS using `exports` field
+= Keycloak JS
 
-The Keycloak JS adapter now uses the https://webpack.js.org/guides/package-exports/[`exports` field] in `package.json`. This change improves support for more modern bundlers like Webpack 5 and Vite, but comes with some unavoidable breaking changes. Consult the link:{upgradingguide_link}[{upgradingguide_name}] for more details.
+== Using `exports` field in `package.json`
+
+The Keycloak JS adapter now uses the https://webpack.js.org/guides/package-exports/[`exports` field] in its `package.json`. This change improves support for more modern bundlers like Webpack 5 and Vite, but comes with some unavoidable breaking changes. Consult the link:{upgradingguide_link}[{upgradingguide_name}] for more details.
+
+== PKCE enabled by default
+
+The Keycloak JS adapter now sets the `pkceMethod` option to `S256` by default. This enables Proof Key Code Exchange (https://datatracker.ietf.org/doc/html/rfc7636[PKCE]) for all applications using the adapter. If you are using the adapter on a system that doesn't support PKCE, you can set the `pkceMethod` option to `false` to disable it.
 
 = Truststore Improvements
 
@@ -124,6 +130,14 @@ will be shown.
 
 In addition to that, a new error (`EMAIL_ALREADY_VERIFIED`) event will be fired to indicate an attempt to verify an already verified email. You can
 use this event to track possible attempts to hijack user accounts in case the link has leaked or to alert users if they do not recognize the action.
+
+= Deprecated offline session preloading
+
+The default behavior of Keycloak is to load offline sessions on demand.
+The old behavior to preload them at startup is now deprecated, as pre-loading them at startup doesn't scale well with a growing number of sessions, and increases Keycloak memory usage. The old behavior will be removed in a future release.
+
+For more details, check the
+link:{upgradingguide_link}[{upgradingguide_name}].
 
 = Infinispan metrics use labels for cache manager and cache names
 
