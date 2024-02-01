@@ -221,12 +221,16 @@ export const RealmOverrides = ({
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "deleteConfirmMessageBundle",
-    messageKey: t("messageBundleDeleteConfirmDialog", {
+    titleKey: "deleteConfirmTranslationTitle",
+    messageKey: t("translationDeleteConfirmDialog", {
       count: selectedRowKeys.length,
     }),
     continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
+    onCancel: () => {
+      setSelectedRowKeys([]);
+      setAreAllRowsSelected(false);
+    },
     onConfirm: async () => {
       try {
         for (const key of selectedRowKeys) {
@@ -563,6 +567,8 @@ export const RealmOverrides = ({
                             setSelectedRowKeys([
                               (row.cells?.[0] as IRowCell).props.value,
                             ]);
+                            messageBundles.length === 1 &&
+                              setAreAllRowsSelected(true);
                             toggleDeleteDialog();
                             setKebabOpen(false);
                           },
