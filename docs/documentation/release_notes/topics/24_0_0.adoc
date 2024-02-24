@@ -91,7 +91,17 @@ The 'welcome' page that is shown when a user starts Keycloak for the first time,
 
 image::images/new-welcome-screen.png["A screenshot of the new welcome page, showing a simplified layout with a user registration form."]
 
-If you are using a custom theme, you may need to update it to support the new welcome page. For more details consult the link:{upgradingguide_link}[{upgradingguide_name}].
+If you are using a custom theme, you may need to update it to support the new welcome page. For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= New Account Console now the default
+
+We introduced version 3 of the Account Console in Keycloak 22 as a preview feature. In this release, we are making it the default version, and deprecating version 2 in the process, which will be removed in a subsequent release.
+
+This new version has built-in support for the user profile feature, which allows administrators to configure which attributes are available to users in the Account Console, and lands a user directly on their personal account page after logging in:
+.New Account Console with custom attributes
+image::images/new-account-console.png["New Account Console with custom attributes"]
+
+If you are using or extending the customization features of this theme,  you may need to perform additional migrations. For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
 
 = Keycloak JS
 
@@ -102,6 +112,46 @@ The Keycloak JS adapter now uses the https://webpack.js.org/guides/package-expor
 == PKCE enabled by default
 
 The Keycloak JS adapter now sets the `pkceMethod` option to `S256` by default. This enables Proof Key Code Exchange (https://datatracker.ietf.org/doc/html/rfc7636[PKCE]) for all applications using the adapter. If you are using the adapter on a system that doesn't support PKCE, you can set the `pkceMethod` option to `false` to disable it.
+
+= OAuth/OIDC related improvements
+
+== Lightweight access tokens support
+
+This release contains support for Lightweight access tokens. As a result, you can have smaller access tokens for specified clients. These tokens have only a few 
+claims, which is why they are smaller. Note that lightweight access token is still JWT signed by the realm key by default and still contains some very basic claims.
+
+This release introduces an *Add to lightweight access token*  flag that is available on some OIDC protocol mappers. Use this flag to specify if a particular claim should be added to a lightweight
+access token. It is *OFF* by default, which means that most claims are not added. Also, a client policy executor exists. Use it to specify if a particular client request
+should use lightweight access tokens or regular access tokens. A previous release added an *Add to token introspection* switch. You use it to add
+claims that are not present in the access token into the introspection endpoint response. Thanks to https://github.com/skabano[Shigeyuki Kabano] for the contribution and Thanks to
+https://github.com/tnorimat[Takashi Norimatsu] for a help and review of this feature.
+
+== Scope parameter supported in the refresh token flow
+
+Starting with this release, we support  the`scope` parameter in the OAuth2/OIDC endpoint for token refresh. You can use this parameter to request access tokens with a smaller amount
+of scopes than originally granted, which means you cannot increase access token scope. This scope limitation does not affect the scope of the refreshed refresh token. This function works as
+described in the OAuth2 specification. Thanks to https://github.com/cgeorgilakis[Konstantinos Georgilakis] for the contribution.
+
+== Client policy executor for enforcing DPoP
+
+A new client policy executor `dpop-bind-enforcer` is introduced. You can use it to enforce DPoP for a particular client if `dpop` preview
+ is enabled. Thanks to https://github.com/tnorimat[Takashi Norimatsu] for the contribution.
+
+== Supporting EdDSA
+
+You can create EdDSA realm keys and use them as signature algorithms for various clients. For instance, you can use these keys to sign tokens or for client authentication with signed JWT.
+This feature includes identity brokering where {project_name} itself signs client assertions that are used for `private_key_jwt` authentication to third party identity providers. Thanks to
+https://github.com/tnorimat[Takashi Norimatsu] and https://github.com/MuhammadZakwan[Muhammad Zakwan Bin Mohd Zahid] for the contribution.
+
+== Option to add X509 thumbprint to JWT when using private_key_jwt authentication for identity providers
+
+OIDC identity providers now have the option *Add X.509 Headers to the JWT* for the case when client authentication with JWT signed by private key is used. This option can be useful
+for interoperability with some identity providers such as Azure AD, which require the thumbprint to be present on the JWT. Thanks to https://github.com/MikeTangoEcho[MT] for the contribution.
+
+= Cors improvements
+
+The CORS related Keycloak functionality was extracted into the SPI, which can allow additional flexibility. Note that `CorsSPI` is internal and may change in the
+future. Thanks to https://github.com/dteleguin[Dmitry Telegin] for the contribution.
 
 = Truststore Improvements
 
@@ -161,8 +211,8 @@ As a result, you can use the CR to configure build time options also when a cust
 = Enhanced reverse proxy settings
 
 It is now possible to separately enable parsing of either `Forwarded` or `X-Forwarded-*` headers via the new `--proxy-headers` option.
-For details consult the https://www.keycloak.org/server/reverseproxy[Reverse Proxy Guide].
-The original `--proxy` option is now deprecated and will be removed in a future release. For migration instructions consult the link:{upgradingguide_link}[{upgradingguide_name}].
+For details, see the https://www.keycloak.org/server/reverseproxy[Reverse Proxy Guide].
+The original `--proxy` option is now deprecated and will be removed in a future release. For migration instructions, see the link:{upgradingguide_link}[{upgradingguide_name}].
 
 = Changes to the user representation in both Admin API and Account contexts
 
@@ -217,6 +267,21 @@ When enabling metrics for {project_name}'s embedded caches, the metrics now use 
 For more details, check the
 link:{upgradingguide_link}[{upgradingguide_name}].
 
+= User attribute value length extension
+
+As of this release, {project_name} supports storing and searching by user attribute values longer than 255 characters, which was previously a limitation.
+
+For more details, check the
+link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Brute Force Protection changes
+
+There have been a couple of enhancements to the Brute Protection:
+
+1. When an attempt to authenticate with an OTP or Recovery Code fails due to Brute Force Protection the active Authentication Session is invalidated. Any further attempts to authenticate with that session will fail.
+
+2. In previous versions of Keycloak the Administrator had to choose between whether to disable users temporarily or permanently due to a Brute Force attack on their account. The administrator now has the option to permanently disable a user after a given number of temporary lockouts.
+
 = Authorization Policy
 
 In previous versions of Keycloak when the last member of a User, Group or Client policy was deleted then that policy would also be deleted. Unfortunately this could lead to an escalation of privileges if the policy was used in an aggregate policy. To avoid privilege escalation the effect policies are no longer deleted and an administrator will need to update those policies.
@@ -244,7 +309,7 @@ spec:
 The Keycloak CR now allows for specifying the `resources` options for managing compute resources for the Keycloak container.
 It provides the ability to request and limit resources independently for the main Keycloak deployment via the Keycloak CR, and for the realm import Job via the Realm Import CR.
 
-When no values are specified, the default `requests` memory is set to `768MiB`, and the `limits` memory is set to `4GiB`.
+When no values are specified, the default `requests` memory is set to `1700MiB`, and the `limits` memory is set to `2GiB`.
 
 You can specify your custom values based on your requirements as follows:
 

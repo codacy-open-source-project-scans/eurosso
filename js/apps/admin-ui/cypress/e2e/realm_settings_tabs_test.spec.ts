@@ -138,6 +138,7 @@ describe("Realm settings tabs tests", () => {
       realmSettingsPage.saveSecurityDefensesHeaders();
       masthead.checkNotificationMessage("Realm successfully updated");
     });
+
     it("Realm header settings- update all inputs", () => {
       sidebarPage.goToRealmSettings();
       realmSettingsPage.goToSecurityDefensesTab();
@@ -152,11 +153,15 @@ describe("Realm settings tabs tests", () => {
       realmSettingsPage.saveSecurityDefensesHeaders();
       masthead.checkNotificationMessage("Realm successfully updated");
     });
+
     it("Brute force detection- update values", () => {
       sidebarPage.goToRealmSettings();
       realmSettingsPage.goToSecurityDefensesTab();
       realmSettingsPage.goToSecurityDefensesBruteForceTab();
-      cy.get("#bruteForceProtected").click({ force: true });
+      cy.get("#kc-brute-force-mode").click();
+      cy.findByTestId("select-brute-force-mode")
+        .contains("Lockout temporarily")
+        .click();
       cy.findByTestId("waitIncrementSeconds").type("1");
       cy.findByTestId("maxFailureWaitSeconds").type("1");
       cy.findByTestId("maxDeltaTimeSeconds").type("1");
