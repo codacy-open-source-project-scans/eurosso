@@ -29,7 +29,6 @@ import java.time.DateTimeException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -41,6 +40,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.crypto.CertificateUtilsProvider;
 import org.wildfly.security.asn1.ASN1;
 import org.wildfly.security.asn1.DERDecoder;
+import org.wildfly.security.x500.GeneralName;
 import org.wildfly.security.x500.X500;
 import org.wildfly.security.x500.cert.AuthorityKeyIdentifierExtension;
 import org.wildfly.security.x500.cert.BasicConstraintsExtension;
@@ -52,6 +52,7 @@ import org.wildfly.security.x500.cert.KeyUsageExtension;
 import org.wildfly.security.x500.cert.SubjectKeyIdentifierExtension;
 import org.wildfly.security.x500.cert.X509CertificateBuilder;
 import org.wildfly.security.x500.cert.X509CertificateExtension;
+import org.wildfly.security.x500.cert.util.KeyUtil;
 
 /**
  * The Class CertificateUtils provides utility functions for generation
@@ -59,7 +60,7 @@ import org.wildfly.security.x500.cert.X509CertificateExtension;
  *
  * @author <a href="mailto:david.anderson@redhat.com">David Anderson</a>
  */
-public class ElytronCertificateUtils  implements CertificateUtilsProvider {
+public class ElytronCertificateUtilsProvider implements CertificateUtilsProvider {
 
     Logger log = Logger.getLogger(getClass());
 
@@ -82,10 +83,7 @@ public class ElytronCertificateUtils  implements CertificateUtilsProvider {
         try {
 
             X500Principal subjectdn = subjectToX500Principle(subject);
-            X500Principal issuerdn = subjectdn;
-            if (caCert != null) {
-                issuerdn = caCert.getSubjectX500Principal();
-            }
+            X500Principal issuerdn = caCert.getSubjectX500Principal();
 
             // Validity
             ZonedDateTime notBefore = ZonedDateTime.ofInstant(new Date(System.currentTimeMillis()).toInstant(),
@@ -110,7 +108,6 @@ public class ElytronCertificateUtils  implements CertificateUtilsProvider {
                     .setNotValidBefore(notBefore)
                     .setNotValidAfter(notAfter)
 
-                    .setSigningKey(keyPair.getPrivate())
                     .setPublicKey(keyPair.getPublic())
 
                     .setSerialNumber(serialNumber)
@@ -120,10 +117,14 @@ public class ElytronCertificateUtils  implements CertificateUtilsProvider {
                     .setSigningKey(caPrivateKey)
 
                     // Subject Key Identifier Extension
-                    .addExtension(new SubjectKeyIdentifierExtension(keyPair.getPublic().getEncoded()))
+                    .addExtension(new SubjectKeyIdentifierExtension(KeyUtil.getKeyIdentifier(keyPair.getPublic())))
 
                     // Authority Key Identifier
-                    .addExtension(new AuthorityKeyIdentifierExtension(keyPair.getPublic().getEncoded(), null, null))
+                    .addExtension(new AuthorityKeyIdentifierExtension(
+                            KeyUtil.getKeyIdentifier(caCert.getPublicKey()),
+                            Collections.singletonList(new GeneralName.DirectoryName(caCert.getIssuerX500Principal().getName())),
+                            caCert.getSerialNumber()
+                    ))
 
                     // Key Usage
                     .addExtension(
