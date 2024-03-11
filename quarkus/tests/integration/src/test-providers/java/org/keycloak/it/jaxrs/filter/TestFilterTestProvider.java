@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Red Hat, Inc. and/or its affiliates
+ * Copyright 2024 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,13 +15,15 @@
  * limitations under the License.
  */
 
-package org.keycloak.models;
+package org.keycloak.it.jaxrs.filter;
 
-/**
- * @deprecated Interface was renamed to {@link StorageProviderRealmModel} in org.keycloak:keycloak-model-storage which should be used from now on. This Interface will be removed in the next release.
- * @author Alexander Schwartz
- */
-@Deprecated
-public interface LegacyRealmModel extends StorageProviderRealmModel {
+import org.keycloak.it.TestProvider;
+
+public class TestFilterTestProvider implements TestProvider {
+
+    @Override
+    public Class<?>[] getClasses() {
+        return new Class[] {TestFilter.class};
+    }
 
 }

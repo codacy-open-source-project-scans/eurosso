@@ -22,7 +22,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import fetchContentJson from "../content/fetchContent";
-import type { Feature } from "../environment";
+import { environment, type Feature } from "../environment";
 import { TFuncKey } from "../i18n";
 import { usePromise } from "../utils/usePromise";
 import { useEnvironment } from "./KeycloakContext";
@@ -132,8 +132,9 @@ export const NavLink = ({
   isActive,
   children,
 }: PropsWithChildren<NavLinkProps>) => {
-  const href = useHref(to);
-  const handleClick = useLinkClickHandler(to);
+  const menuItemPath = `${new URL(environment.baseUrl).pathname}${to}`;
+  const href = useHref(menuItemPath);
+  const handleClick = useLinkClickHandler(menuItemPath);
 
   return (
     <NavItem
