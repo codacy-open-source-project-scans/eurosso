@@ -25,6 +25,9 @@
             <column name="REALM_ID" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
+            <column name="GROUP_ID" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
             <column name="NAME" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
@@ -32,6 +35,31 @@
 
         <addPrimaryKey columnNames="ID" tableName="ORGANIZATION"/>
         <addUniqueConstraint tableName="ORGANIZATION" columnNames="REALM_ID, NAME" constraintName="UK_ORG_NAME"/>
+        <addUniqueConstraint tableName="ORGANIZATION" columnNames="GROUP_ID" constraintName="UK_ORG_GROUP"/>
     </changeSet>
+
+    <changeSet author="keycloak" id="unique-consentuser">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <or>
+                <dbms type="mariadb"/>
+                <dbms type="postgresql"/>
+            </or>
+        </preConditions>
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate25_0_0_ConsentConstraints"/>
+        <dropUniqueConstraint tableName="USER_CONSENT" constraintName="UK_JKUWUVD56ONTGSUHOGM8UEWRT"/>
+        <addUniqueConstraint columnNames="CLIENT_ID, USER_ID" constraintName="UK_LOCAL_CONSENT" tableName="USER_CONSENT"/>
+        <addUniqueConstraint columnNames="CLIENT_STORAGE_PROVIDER, EXTERNAL_CLIENT_ID, USER_ID" constraintName="UK_EXTERNAL_CONSENT" tableName="USER_CONSENT"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="unique-consentuser-mysql">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <dbms type="mysql"/>
+        </preConditions>
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate25_0_0_MySQL_ConsentConstraints"/>
+        <dropUniqueConstraint tableName="USER_CONSENT" constraintName="UK_JKUWUVD56ONTGSUHOGM8UEWRT"/>
+        <addUniqueConstraint columnNames="CLIENT_ID, USER_ID" constraintName="UK_LOCAL_CONSENT" tableName="USER_CONSENT"/>
+        <addUniqueConstraint columnNames="CLIENT_STORAGE_PROVIDER, EXTERNAL_CLIENT_ID, USER_ID" constraintName="UK_EXTERNAL_CONSENT" tableName="USER_CONSENT"/>
+    </changeSet>
+
 
 </databaseChangeLog>
